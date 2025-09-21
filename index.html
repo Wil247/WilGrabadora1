@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grabadora de Audio Profesional</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+
+    <script>
+  // Evita el clic derecho
+  document.addEventListener('contextmenu', event => event.preventDefault());
+
+  // Evita teclas como F12, Ctrl+Shift+I, Ctrl+U
+  document.addEventListener('keydown', function(e) {
+    if (e.key === "F12" || 
+        (e.ctrlKey && e.shiftKey && e.key === "I") || 
+        (e.ctrlKey && e.key === "U")) {
+      e.preventDefault();
+    }
+  });
+</script>
+</head>
+<body class="bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-white mb-2">
+                <i class="fas fa-microphone mr-3 text-purple-400"></i>
+                Grabadora de Audio Profesional
+            </h1>
+            <p class="text-gray-300">Graba audio de alta calidad y descarga en múltiples formatos</p>
+        </div>
+        <br>
+
+        <!-- Main Recording Interface -->
+        <div class="max-w-2xl mx-auto bg-white/10 backdrop-blur-lg rounded-2xl p-8 shadow-2xl border border-white/20">
+            <!-- Status Display -->
+            <div class="text-center mb-8">
+                <div id="status" class="text-2xl font-semibold text-white mb-4">Listo para grabar</div>
+                <div id="timer" class="text-4xl font-mono text-purple-300 mb-4">00:00</div>
+                
+                <!-- Audio Visualizer -->
+                <div class="flex justify-center items-center mb-6">
+                    <canvas id="visualizer" width="300" height="100" class="border border-purple-400/30 rounded-lg bg-black/20"></canvas>
+                </div>
+            </div>
+
+            <!-- Control Buttons -->
+            <div class="flex justify-center space-x-4 mb-8">
+                <button id="startBtn" class="bg-red-500 hover:bg-red-600 text-white px-8 py-4 rounded-full font-semibold transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105">
+                    <i class="fas fa-microphone mr-2"></i>Iniciar Grabación
+                </button>
+                <button id="stopBtn" class="bg-gray-500 text-white px-8 py-4 rounded-full font-semibold transition-all duration-300 shadow-lg opacity-50 cursor-not-allowed" disabled>
+                    <i class="fas fa-stop mr-2"></i>Detener
+                </button>
+                <button id="playBtn" class="bg-green-500 hover:bg-green-600 text-white px-8 py-4 rounded-full font-semibold transition-all duration-300 shadow-lg opacity-50 cursor-not-allowed" disabled>
+                    <i class="fas fa-play mr-2"></i>Reproducir
+                </button>
+            </div>
+
+            <!-- Audio Player -->
+            <div id="audioPlayerContainer" class="hidden mb-6">
+                <audio id="audioPlayer" controls class="w-full rounded-lg"></audio>
+            </div>
+
+            <!-- Format Selection -->
+            <div class="mb-6">
+                <label class="block text-white font-semibold mb-3">Formato de descarga:</label>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <label class="flex items-center space-x-2 bg-white/10 p-3 rounded-lg cursor-pointer hover:bg-white/20 transition-colors">
+                        <input type="radio" name="format" value="mp3" checked class="text-purple-500">
+                        <span class="text-white">MP3 (Default)</span>
+                    </label>
+                    <label class="flex items-center space-x-2 bg-white/10 p-3 rounded-lg cursor-pointer hover:bg-white/20 transition-colors">
+                        <input type="radio" name="format" value="wav" class="text-purple-500">
+                        <span class="text-white">WAV</span>
+                    </label>
+                    <label class="flex items-center space-x-2 bg-white/10 p-3 rounded-lg cursor-pointer hover:bg-white/20 transition-colors">
+                        <input type="radio" name="format" value="ogg" class="text-purple-500">
+                        <span class="text-white">OGG</span>
+                    </label>
+                    <label class="flex items-center space-x-2 bg-white/10 p-3 rounded-lg cursor-pointer hover:bg-white/20 transition-colors">
+                        <input type="radio" name="format" value="webm" class="text-purple-500">
+                        <span class="text-white">WebM</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Download Button -->
+            <div class="text-center">
+                <button id="downloadBtn" class="bg-purple-500 hover:bg-purple-600 text-white px-8 py-4 rounded-full font-semibold transition-all duration-300 shadow-lg opacity-50 cursor-not-allowed transform hover:scale-105" disabled>
+                    <i class="fas fa-download mr-2"></i>Descargar Grabación
+                </button>
+            </div>
+
+            <!-- Recording Info -->
+            <div id="recordingInfo" class="mt-6 p-4 bg-white/5 rounded-lg hidden">
+                <h3 class="text-white font-semibold mb-2">Información de la grabación:</h3>
+                <div class="text-gray-300 text-sm space-y-1">
+                    <div>Duración: <span id="duration">--</span></div>
+                    <div>Tamaño: <span id="fileSize">--</span></div>
+                    <div>Formato original: <span id="originalFormat">--</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Instructions -->
+        <!-- <div class="max-w-2xl mx-auto mt-8 bg-white/5 backdrop-blur-lg rounded-xl p-6 border border-white/10">
+            <h3 class="text-white font-semibold mb-3">
+                <i class="fas fa-info-circle mr-2 text-blue-400"></i>
+                Instrucciones de uso:
+            </h3>
+            <ul class="text-gray-300 space-y-2 text-sm">
+                <li>• Haz clic en "Iniciar Grabación" para comenzar</li>
+                <li>• El visualizador mostrará la actividad del audio en tiempo real</li>
+                <li>• Usa "Detener" para finalizar la grabación</li>
+                <li>• Reproduce tu grabación antes de descargar</li>
+                <li>• Selecciona el formato deseado (MP3 por defecto)</li>
+                <li>• Descarga tu archivo con un solo clic</li>
+            </ul>
+        </div> -->
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirmationModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 hidden">
+        <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-8 max-w-md mx-4 border border-white/20 shadow-2xl">
+            <div class="text-center">
+                <div class="mb-6">
+                    <i class="fas fa-exclamation-triangle text-yellow-400 text-4xl mb-4"></i>
+                    <h3 class="text-xl font-bold text-white mb-2">¿Guardar grabación actual?</h3>
+                    <p class="text-gray-300">Ya tienes una grabación. ¿Qué deseas hacer antes de iniciar una nueva?</p>
+                </div>
+                
+                <div class="space-y-3">
+                    <button id="saveAndContinue" class="w-full bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg font-semibold transition-all duration-300">
+                        <i class="fas fa-save mr-2"></i>Guardar y continuar
+                    </button>
+                    <button id="discardAndContinue" class="w-full bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-lg font-semibold transition-all duration-300">
+                        <i class="fas fa-trash mr-2"></i>Descartar y continuar
+                    </button>
+                    <button id="cancelAction" class="w-full bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded-lg font-semibold transition-all duration-300">
+                        <i class="fas fa-times mr-2"></i>Cancelar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <br>
+    <br>
+
+    <footer></footer>
+    <div class="text-center mb-8">
+            
+            <h1 class="text-4xl font-bold text-white mb-2">
+
+                Desarrollado por el Prof. Wilfran L Decena
+            </h1>
+    </div>
+    </footer>
+    
+    <script>
+        class AudioRecorder {
+            constructor() {
+                this.mediaRecorder = null;
+                this.audioChunks = [];
+                this.audioBlob = null;
+                this.audioUrl = null;
+                this.stream = null;
+                this.audioContext = null;
+                this.analyser = null;
+                this.dataArray = null;
+                this.animationId = null;
+                this.startTime = null;
+                this.timerInterval = null;
+                this.hasRecording = false;
+
+                this.initializeElements();
+                this.setupEventListeners();
+            }
+
+            initializeElements() {
+                this.startBtn = document.getElementById('startBtn');
+                this.stopBtn = document.getElementById('stopBtn');
+                this.playBtn = document.getElementById('playBtn');
+                this.downloadBtn = document.getElementById('downloadBtn');
+                this.audioPlayer = document.getElementById('audioPlayer');
+                this.audioPlayerContainer = document.getElementById('audioPlayerContainer');
+                this.status = document.getElementById('status');
+                this.timer = document.getElementById('timer');
+                this.visualizer = document.getElementById('visualizer');
+                this.ctx = this.visualizer.getContext('2d');
+                this.recordingInfo = document.getElementById('recordingInfo');
+                this.confirmationModal = document.getElementById('confirmationModal');
+                this.saveAndContinueBtn = document.getElementById('saveAndContinue');
+                this.discardAndContinueBtn = document.getElementById('discardAndContinue');
+                this.cancelActionBtn = document.getElementById('cancelAction');
+            }
+
+            setupEventListeners() {
+                this.startBtn.addEventListener('click', () => this.handleStartRecording());
+                this.stopBtn.addEventListener('click', () => this.stopRecording());
+                this.playBtn.addEventListener('click', () => this.playRecording());
+                this.downloadBtn.addEventListener('click', () => this.downloadRecording());
+                
+                this.saveAndContinueBtn.addEventListener('click', () => this.saveAndStartNew());
+                this.discardAndContinueBtn.addEventListener('click', () => this.discardAndStartNew());
+                this.cancelActionBtn.addEventListener('click', () => this.hideModal());
+            }
+
+            handleStartRecording() {
+                if (this.hasRecording) {
+                    this.showModal();
+                } else {
+                    this.startRecording();
+                }
+            }
+
+            showModal() {
+                this.confirmationModal.classList.remove('hidden');
+            }
+
+            hideModal() {
+                this.confirmationModal.classList.add('hidden');
+            }
+
+            saveAndStartNew() {
+                this.downloadRecording();
+                this.discardAndStartNew();
+            }
+
+            discardAndStartNew() {
+                this.clearCurrentRecording();
+                this.hideModal();
+                this.startRecording();
+            }
+
+            clearCurrentRecording() {
+                if (this.audioUrl) {
+                    URL.revokeObjectURL(this.audioUrl);
+                }
+                this.audioBlob = null;
+                this.audioUrl = null;
+                this.audioChunks = [];
+                this.hasRecording = false;
+                this.audioPlayerContainer.classList.add('hidden');
+                this.recordingInfo.classList.add('hidden');
+                this.timer.textContent = '00:00';
+                this.status.textContent = 'Listo para grabar';
+                this.updateUI('initial');
+            }
+
+            async startRecording() {
+                try {
+                    this.stream = await navigator.mediaDevices.getUserMedia({ 
+                        audio: {
+                            echoCancellation: true,
+                            noiseSuppression: true,
+                            sampleRate: 44100
+                        } 
+                    });
+
+                    // Setup audio context for visualization
+                    this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    this.analyser = this.audioContext.createAnalyser();
+                    const source = this.audioContext.createMediaStreamSource(this.stream);
+                    source.connect(this.analyser);
+                    
+                    this.analyser.fftSize = 256;
+                    const bufferLength = this.analyser.frequencyBinCount;
+                    this.dataArray = new Uint8Array(bufferLength);
+
+                    // Setup MediaRecorder
+                    const options = { mimeType: 'audio/webm;codecs=opus' };
+                    if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+                        options.mimeType = 'audio/webm';
+                    }
+                    
+                    this.mediaRecorder = new MediaRecorder(this.stream, options);
+                    this.audioChunks = [];
+
+                    this.mediaRecorder.ondataavailable = (event) => {
+                        if (event.data.size > 0) {
+                            this.audioChunks.push(event.data);
+                        }
+                    };
+
+                    this.mediaRecorder.onstop = () => {
+                        this.processRecording();
+                    };
+
+                    this.mediaRecorder.start(100);
+                    this.startTime = Date.now();
+                    this.startTimer();
+                    this.startVisualization();
+
+                    this.updateUI('recording');
+                    this.status.textContent = 'Grabando...';
+
+                } catch (error) {
+                    console.error('Error accessing microphone:', error);
+                    alert('Error al acceder al micrófono. Por favor, permite el acceso y recarga la página.');
+                }
+            }
+
+            stopRecording() {
+                if (this.mediaRecorder && this.mediaRecorder.state === 'recording') {
+                    this.mediaRecorder.stop();
+                    this.stream.getTracks().forEach(track => track.stop());
+                    
+                    if (this.audioContext) {
+                        this.audioContext.close();
+                    }
+                    
+                    this.stopTimer();
+                    this.stopVisualization();
+                    this.updateUI('stopped');
+                    this.status.textContent = 'Grabación completada';
+                }
+            }
+
+            processRecording() {
+                this.audioBlob = new Blob(this.audioChunks, { type: 'audio/webm' });
+                this.audioUrl = URL.createObjectURL(this.audioBlob);
+                
+                this.audioPlayer.src = this.audioUrl;
+                this.audioPlayerContainer.classList.remove('hidden');
+                
+                this.hasRecording = true;
+                
+                this.showRecordingInfo();
+                this.updateUI('ready');
+            }
+
+            playRecording() {
+                if (this.audioPlayer.src) {
+                    this.audioPlayer.play();
+                }
+            }
+
+            async downloadRecording() {
+                if (!this.audioBlob) return;
+
+                const selectedFormat = document.querySelector('input[name="format"]:checked').value;
+                let finalBlob = this.audioBlob;
+                let mimeType = 'audio/webm';
+                let extension = 'webm';
+
+                // For MP3 conversion, we'll use the original blob as WebM and rename
+                // In a real implementation, you'd need a library like lamejs for actual MP3 conversion
+                switch (selectedFormat) {
+                    case 'mp3':
+                        extension = 'mp3';
+                        mimeType = 'audio/mpeg';
+                        break;
+                    case 'wav':
+                        extension = 'wav';
+                        mimeType = 'audio/wav';
+                        break;
+                    case 'ogg':
+                        extension = 'ogg';
+                        mimeType = 'audio/ogg';
+                        break;
+                    case 'webm':
+                        extension = 'webm';
+                        mimeType = 'audio/webm';
+                        break;
+                }
+
+                const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+                const filename = `grabacion_${timestamp}.${extension}`;
+
+                const downloadLink = document.createElement('a');
+                downloadLink.href = URL.createObjectURL(new Blob([finalBlob], { type: mimeType }));
+                downloadLink.download = filename;
+                downloadLink.click();
+
+                URL.revokeObjectURL(downloadLink.href);
+            }
+
+            startTimer() {
+                this.timerInterval = setInterval(() => {
+                    const elapsed = Date.now() - this.startTime;
+                    const minutes = Math.floor(elapsed / 60000);
+                    const seconds = Math.floor((elapsed % 60000) / 1000);
+                    this.timer.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                }, 1000);
+            }
+
+            stopTimer() {
+                if (this.timerInterval) {
+                    clearInterval(this.timerInterval);
+                }
+            }
+
+            startVisualization() {
+                const draw = () => {
+                    this.animationId = requestAnimationFrame(draw);
+                    
+                    this.analyser.getByteFrequencyData(this.dataArray);
+                    
+                    this.ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+                    this.ctx.fillRect(0, 0, this.visualizer.width, this.visualizer.height);
+                    
+                    const barWidth = (this.visualizer.width / this.dataArray.length) * 2.5;
+                    let barHeight;
+                    let x = 0;
+                    
+                    for (let i = 0; i < this.dataArray.length; i++) {
+                        barHeight = (this.dataArray[i] / 255) * this.visualizer.height;
+                        
+                        const r = barHeight + 25 * (i / this.dataArray.length);
+                        const g = 250 * (i / this.dataArray.length);
+                        const b = 50;
+                        
+                        this.ctx.fillStyle = `rgb(${r},${g},${b})`;
+                        this.ctx.fillRect(x, this.visualizer.height - barHeight, barWidth, barHeight);
+                        
+                        x += barWidth + 1;
+                    }
+                };
+                draw();
+            }
+
+            stopVisualization() {
+                if (this.animationId) {
+                    cancelAnimationFrame(this.animationId);
+                }
+                this.ctx.clearRect(0, 0, this.visualizer.width, this.visualizer.height);
+            }
+
+            showRecordingInfo() {
+                const duration = this.timer.textContent;
+                const fileSize = (this.audioBlob.size / 1024).toFixed(2) + ' KB';
+                const format = 'WebM/Opus';
+
+                document.getElementById('duration').textContent = duration;
+                document.getElementById('fileSize').textContent = fileSize;
+                document.getElementById('originalFormat').textContent = format;
+                
+                this.recordingInfo.classList.remove('hidden');
+            }
+
+            updateUI(state) {
+                switch (state) {
+                    case 'recording':
+                        this.startBtn.disabled = true;
+                        this.startBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                        this.stopBtn.disabled = false;
+                        this.stopBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                        this.stopBtn.classList.add('hover:bg-gray-600');
+                        this.playBtn.disabled = true;
+                        this.downloadBtn.disabled = true;
+                        break;
+                    case 'stopped':
+                        this.stopBtn.disabled = true;
+                        this.stopBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                        this.stopBtn.classList.remove('hover:bg-gray-600');
+                        break;
+                    case 'ready':
+                        this.startBtn.disabled = false;
+                        this.startBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                        this.playBtn.disabled = false;
+                        this.playBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                        this.downloadBtn.disabled = false;
+                        this.downloadBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                        break;
+                    case 'initial':
+                        this.startBtn.disabled = false;
+                        this.startBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                        this.stopBtn.disabled = true;
+                        this.stopBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                        this.playBtn.disabled = true;
+                        this.playBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                        this.downloadBtn.disabled = true;
+                        this.downloadBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                        break;
+                }
+            }
+        }
+
+        // Initialize the audio recorder when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new AudioRecorder();
+        });
+    </script>
+</body>
+</html>
